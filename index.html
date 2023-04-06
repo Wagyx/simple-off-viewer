@@ -5,15 +5,16 @@
 	<title>Antiprism OFF Viewer</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<!-- <base href="https://www.w3schools.com/images/"> -->
 	<script type="importmap">
 		{
 			"imports": {
-				"three": "/js/three.module.js"
+				"three": "./js/three.module.js"
 			}
 		}
 	</script>
-	<link rel=stylesheet href="//css/base.css" />
-	<link rel="icon" type="image/svg" href="/favicon.svg" />
+	<link rel=stylesheet href="css/base.css" />
+	<!-- <link rel="icon" type="image/svg" href="favicon.svg" /> -->
 </head>
 
 <body>
@@ -23,8 +24,8 @@
 
 	<!-- Import maps polyfill -->
 	<!-- Remove this when import maps will be widely supported -->
-	<script src="/js/es-module-shims.js"></script>
-	<script type="module" src="/main-antiprism-viewer.js"></script>
+	<script src="js/es-module-shims.js"></script>
+	<script type="module" src="main-antiprism-viewer.js"></script>
 
 
 </body>
