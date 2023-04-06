@@ -17,12 +17,28 @@ let gNumMaxVertices = 1;
 let gNumMaxEdges = 1;
 const gDefaultColor = [1., 1., 1.];
 // custom global variables
-let gPolyhedronMesh, gParameters, gVerticesMesh, gEdgesMesh, gFacesMesh, gTextureEquirec;
+let gPolyhedronMesh, gVerticesMesh, gEdgesMesh, gFacesMesh, gTextureEquirec;
 
-
-const link = document.createElement('a');
-link.style.display = 'none';
-document.body.appendChild(link);
+// const gParameters = {
+//     transparency: clamp(parseFloat(getURLParameter("transparency", 0.0)),0.0,1.0),
+//     edgesActive: getURLParameter("edgesActive", "true") == "true",
+//     facesActive: getURLParameter("facesActive", "true") == "true",
+//     verticesActive: getURLParameter("verticesActive", "true") == "true",
+//     useBaseColor: getURLParameter("useBaseColor", "true") == "true",
+//     url: decodeURIComponent(getURLParameter("url", "")),
+//     background: 0.8,
+// };
+const gParameters = {
+    transparency: 0.0,
+    edgesActive: true,
+    facesActive: true,
+    verticesActive: true,
+    useBaseColor: true,
+    url: decodeURIComponent(getURLParameter("url", "")),
+    backgroundColor: new THREE.Color(0xdddddd),
+    sphereRadius: 0.01, //relative to 1
+    cylinderRadius:0.005, //relative to 1
+};
 
 init();
 animate();
@@ -69,24 +85,7 @@ function init() {
     ////////////
     const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 
-    // gParameters = {
-    //     transparency: clamp(parseFloat(getURLParameter("transparency", 0.0)),0.0,1.0),
-    //     edgesActive: getURLParameter("edgesActive", "true") == "true",
-    //     facesActive: getURLParameter("facesActive", "true") == "true",
-    //     verticesActive: getURLParameter("verticesActive", "true") == "true",
-    //     useBaseColor: getURLParameter("useBaseColor", "true") == "true",
-    //     url: decodeURIComponent(getURLParameter("url", "")),
-    //     background: 0.8,
-    // };
-    gParameters = {
-        transparency: 0.0,
-        edgesActive: true,
-        facesActive: true,
-        verticesActive: true,
-        useBaseColor: true,
-        url: decodeURIComponent(getURLParameter("url", "")),
-        background: 0.8,
-    };
+
     gPolyhedronMesh = new THREE.Object3D();
     gScene.add(gPolyhedronMesh);
 
@@ -114,7 +113,7 @@ function init() {
     /////////
 
     if (gParameters.url == "" || gParameters.url === undefined) {
-        const obj={filename:"/off/U1.off"};
+        const obj={filename:"off/U1.off"};
         loadOffPoly(obj)
     }
     else {
@@ -136,7 +135,7 @@ function makeEdgesMesh(nbMaxEdges) {
         // envMap:gTextureEquirec,
         visible: gParameters.edgesActive,
     });
-    const edgeGeometry = new THREE.CylinderGeometry(1, 1, 1, 8 * 2, 4 * 2);
+    const edgeGeometry = new THREE.CylinderGeometry(gParameters.cylinderRadius, gParameters.cylinderRadius, 1, 8 * 2, 4 * 2);
     const edgesMesh = new THREE.InstancedMesh(edgeGeometry, edgeMaterial, nbMaxEdges);
     for (let i = 0; i < nbMaxEdges; ++i) {
         edgesMesh.setColorAt(i, defaultColor);
@@ -153,7 +152,7 @@ function makeVerticesMesh(nbMaxVertices) {
         // envMap:gTextureEquirec,
         visible: gParameters.verticesActive,
     });
-    const vertexGeometry = new THREE.SphereGeometry(1, 12 * 3, 6 * 3)
+    const vertexGeometry = new THREE.SphereGeometry(gParameters.sphereRadius, 12 * 3, 6 * 3)
     const verticesMesh = new THREE.InstancedMesh(vertexGeometry, vertexMaterial, nbMaxVertices);
     for (let i = 0; i < nbMaxVertices; ++i) {
         verticesMesh.setColorAt(i, defaultColor);
@@ -224,11 +223,11 @@ function displayPolyhedron(data) {
         const index1 = data.edges[i][1];
         edgesLength.push(vertices[index0].distanceTo(vertices[index1]));
     }
-    const scaleFactor = arrayAverage(edgesLength) * 0.005;
+    const scaleFactor = arrayAverage(edgesLength);
 
     //MAKE VERTICES
     {
-        const S = new THREE.Matrix4().makeScale(scaleFactor * 2, scaleFactor * 2, scaleFactor * 2);
+        const S = new THREE.Matrix4().makeScale(scaleFactor, scaleFactor, scaleFactor);
         gVerticesMesh.count = data.vertices.length;
         for (let i = 0; i < data.vertices.length; i++) {
             let position = vertices[i];
@@ -393,7 +392,7 @@ function onWindowResize() {
 }
 
 function render() {
-    gRenderer.setClearColor(new THREE.Color(gParameters.background, gParameters.background, gParameters.background));
+    gRenderer.setClearColor(gParameters.backgroundColor);
     gRenderer.render(gScene, gCamera);
 }
 
