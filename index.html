@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>Antiprism OFF Viewer</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	<script type="importmap">
+		{
+			"imports": {
+				"three": "/js/three.module.js"
+			}
+		}
+	</script>
+	<link rel=stylesheet href="//css/base.css" />
+	<link rel="icon" type="image/svg" href="/favicon.svg" />
+</head>
+
+<body>
+
+	<!-- ------------------------------------------------------------ -->
+	<div id="ThreeJS" style="position: absolute; left:0px; top:0px"></div>
+
+	<!-- Import maps polyfill -->
+	<!-- Remove this when import maps will be widely supported -->
+	<script src="/js/es-module-shims.js"></script>
+	<script type="module" src="/main-antiprism-viewer.js"></script>
+
+
+</body>
+
+</html>
