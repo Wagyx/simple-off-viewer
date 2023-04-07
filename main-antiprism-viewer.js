@@ -19,25 +19,17 @@ const gDefaultColor = [1., 1., 1.];
 // custom global variables
 let gPolyhedronMesh, gVerticesMesh, gEdgesMesh, gFacesMesh, gTextureEquirec;
 
-// const gParameters = {
-//     transparency: clamp(parseFloat(getURLParameter("transparency", 0.0)),0.0,1.0),
-//     edgesActive: getURLParameter("edgesActive", "true") == "true",
-//     facesActive: getURLParameter("facesActive", "true") == "true",
-//     verticesActive: getURLParameter("verticesActive", "true") == "true",
-//     useBaseColor: getURLParameter("useBaseColor", "true") == "true",
-//     url: decodeURIComponent(getURLParameter("url", "")),
-//     background: 0.8,
-// };
+const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 const gParameters = {
-    transparency: 0.0,
-    edgesActive: true,
-    facesActive: true,
-    verticesActive: true,
-    useBaseColor: true,
+    transparency: clamp(parseFloat(getURLParameter("transparency", 0.0)), 0.0, 1.0),
+    edgesActive: getURLParameter("edgesActive", "true") == "true",
+    facesActive: getURLParameter("facesActive", "true") == "true",
+    verticesActive: getURLParameter("verticesActive", "true") == "true",
+    useBaseColor: getURLParameter("useBaseColor", "true") == "true",
     url: decodeURIComponent(getURLParameter("url", "")),
-    backgroundColor: new THREE.Color(0xdddddd),
-    sphereRadius: 0.01, //relative to 1
-    cylinderRadius:0.005, //relative to 1
+    backgroundColor: "#"+getURLParameter("backgroundColor", "cccccc"),
+    vertexRadius: clamp(parseFloat(getURLParameter("vertexRadius", 0.03)), 0.0, 1.0),
+    edgeRadius: clamp(parseFloat(getURLParameter("edgeRadius", 0.02)), 0.0, 1.0),
 };
 
 init();
@@ -135,7 +127,7 @@ function makeEdgesMesh(nbMaxEdges) {
         // envMap:gTextureEquirec,
         visible: gParameters.edgesActive,
     });
-    const edgeGeometry = new THREE.CylinderGeometry(gParameters.cylinderRadius, gParameters.cylinderRadius, 1, 8 * 2, 4 * 2);
+    const edgeGeometry = new THREE.CylinderGeometry(gParameters.edgeRadius, gParameters.edgeRadius, 1, 8 * 2, 4 * 2);
     const edgesMesh = new THREE.InstancedMesh(edgeGeometry, edgeMaterial, nbMaxEdges);
     for (let i = 0; i < nbMaxEdges; ++i) {
         edgesMesh.setColorAt(i, defaultColor);
@@ -152,7 +144,7 @@ function makeVerticesMesh(nbMaxVertices) {
         // envMap:gTextureEquirec,
         visible: gParameters.verticesActive,
     });
-    const vertexGeometry = new THREE.SphereGeometry(gParameters.sphereRadius, 12 * 3, 6 * 3)
+    const vertexGeometry = new THREE.SphereGeometry(gParameters.vertexRadius, 12 * 3, 6 * 3)
     const verticesMesh = new THREE.InstancedMesh(vertexGeometry, vertexMaterial, nbMaxVertices);
     for (let i = 0; i < nbMaxVertices; ++i) {
         verticesMesh.setColorAt(i, defaultColor);
@@ -177,7 +169,11 @@ function setUrlParameters(parameters) {
     if (parameters.url != "" && parameters.url !== undefined) {
         arr.push("url=" + encodeURIComponent(parameters.url));
     }
-    const newAdditionalURL = arr.join("&")
+    const keys = ["transparency", "edgesActive", "facesActive", "verticesActive", "useBaseColor","vertexRadius","edgeRadius","backgroundColor"];
+    for (let arg of keys) {
+        arr.push("" + arg + "=" + parameters[arg]);
+    }
+    const newAdditionalURL = arr.join("&").replace("#","");
     const baseURL = window.location.href.split("?")[0];
     const newUrl = baseURL + "?" + newAdditionalURL;
     window.history.replaceState('', '', newUrl);
