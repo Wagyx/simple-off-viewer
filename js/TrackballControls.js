@@ -1,3 +1,8 @@
+/**
+ * @license
+ * Copyright 2010-2022 Three.js Authors
+ * SPDX-License-Identifier: MIT
+ */
 import {
 	EventDispatcher,
 	MOUSE,

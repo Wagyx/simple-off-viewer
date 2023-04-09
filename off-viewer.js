@@ -1,3 +1,7 @@
+/*
+Copyright (c) 2023 Wagyx Xygaw
+Under MIT License
+*/
 import * as THREE from 'three';
 import {
     TrackballControls
@@ -75,12 +79,8 @@ function init() {
     ////////////
     // CUSTOM //
     ////////////
-    const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
-
-
     gPolyhedronMesh = new THREE.Object3D();
     gScene.add(gPolyhedronMesh);
-
 
     for (let obj of POLYHEDRA) {
         gNumMaxEdges = Math.max(gNumMaxEdges, obj.e);
@@ -104,14 +104,13 @@ function init() {
     // GUI //
     /////////
 
-    if (gParameters.url == "" || gParameters.url === undefined) {
+    if(gParameters.url){
+        loadFileFromUrl(gParameters.url);
+    }
+    else {
         const obj={filename:"off/U1.off"};
         loadOffPoly(obj)
     }
-    else {
-        loadFileFromUrl(gParameters.url);
-    }
-
 
     // EVENTS
     window.addEventListener('resize', onWindowResize);

@@ -1,3 +1,8 @@
+/*
+Copyright (c) 2023 Wagyx Xygaw
+Under MIT License
+Based on OBJLoader from Three.js
+*/
 import {
 	FileLoader,
 	Loader,
