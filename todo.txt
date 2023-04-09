@@ -1,7 +1,1 @@
-- remove the name Antiprism at some places.
-- use npm ?
 - int colors
-- copyright comment
-- maintain ?
-- localFile loading with parameter
-
