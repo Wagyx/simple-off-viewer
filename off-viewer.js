@@ -51,7 +51,7 @@ function init() {
     const far = 1000;
     gCamera = new THREE.PerspectiveCamera(viewAngle, width / height, near, far);
     gScene.add(gCamera);
-    gCamera.position.set(0, 20, 40);
+    gCamera.position.set(0, 0, 45);
     gCamera.lookAt(gScene.position);
 
     const light = new THREE.DirectionalLight(0xffffff, 0.5);
