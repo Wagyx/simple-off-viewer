@@ -22,6 +22,7 @@ let gNumMaxEdges = 1;
 const gDefaultColor = [1., 1., 1.];
 // custom global variables
 let gPolyhedronMesh, gVerticesMesh, gEdgesMesh, gFacesMesh, gTextureEquirec;
+const defaultCamPos = [0, 0, 45];
 
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 const gParameters = {
@@ -51,7 +52,7 @@ function init() {
     const far = 1000;
     gCamera = new THREE.PerspectiveCamera(viewAngle, width / height, near, far);
     gScene.add(gCamera);
-    gCamera.position.set(0, 0, 45);
+    gCamera.position.set(...defaultCamPos);
     gCamera.lookAt(gScene.position);
 
     const light = new THREE.DirectionalLight(0xffffff, 0.5);
@@ -113,7 +114,10 @@ function init() {
     }
 
     // EVENTS
+    document.addEventListener("keydown", onDocumentKeyDown, false);
+    // document.addEventListener("touchcancel", onDocumentTouchCancel, false);
     window.addEventListener('resize', onWindowResize);
+
 } // end of function init()
 
 
@@ -542,3 +546,19 @@ function loadFileFromLocal(file) {
         console.log("The file extension is not correct, should be .off")
     }
 }
+
+function onDocumentKeyDown(event) {
+    console.log(event);
+    //https://www.freecodecamp.org/news/javascript-keycode-list-keypress-event-key-codes/
+    const keyCode = event.which;
+    if (keyCode == 53) {
+        //mambo number 5
+        gCamera.position.set(...defaultCamPos);
+    }
+};
+
+// function onDocumentTouchCancel(event) {
+//     const keyCode = event.which;
+//         gCamera.position.set(...defaultCamPos);
+// };
+
