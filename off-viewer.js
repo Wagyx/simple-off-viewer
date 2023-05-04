@@ -19,6 +19,7 @@ let gCurrInd = -1;
 const POLYHEDRA=[];
 let gNumMaxVertices = 1;
 let gNumMaxEdges = 1;
+let gElapsedTime = 0;
 const gDefaultColor = [1., 1., 1.];
 // custom global variables
 let gPolyhedronMesh, gVerticesMesh, gEdgesMesh, gFacesMesh, gTextureEquirec;
@@ -35,8 +36,13 @@ const gParameters = {
     backgroundColor: "#"+getURLParameter("backgroundColor", "cccccc"),
     vertexRadius: clamp(parseFloat(getURLParameter("vertexRadius", 0.03)), 0.0, 1.0),
     edgeRadius: clamp(parseFloat(getURLParameter("edgeRadius", 0.02)), 0.0, 1.0),
+    rotationDirection : parseVec3(getURLParameter("rotationDirection", "0,1,0")),
+    rotationSpeed: parseFloat(getURLParameter("rotationSpeed", 1.0)),
 };
+gParameters.rotationDirection.normalize();
 
+const gClock = new THREE.Clock();
+gClock.start();
 init();
 animate();
 
@@ -121,6 +127,15 @@ function init() {
 } // end of function init()
 
 
+function parseVec3(pString){
+    const arr = pString.split(",");
+    arr.forEach(function(el, index, arr) {
+        arr[index] = parseFloat(el);
+      });
+    const vec = new THREE.Vector3(arr[0],arr[1],arr[2]);
+    return vec;
+}
+
 function makeEdgesMesh(nbMaxEdges) {
     const defaultColor = new THREE.Color(...gDefaultColor);
     const edgeMaterial = new THREE.MeshStandardMaterial({
@@ -172,10 +187,11 @@ function setUrlParameters(parameters) {
     if (parameters.url != "" && parameters.url !== undefined) {
         arr.push("url=" + encodeURIComponent(parameters.url));
     }
-    const keys = ["transparency", "edgesActive", "facesActive", "verticesActive", "useBaseColor","vertexRadius","edgeRadius","backgroundColor"];
+    const keys = ["transparency", "edgesActive", "facesActive", "verticesActive", "useBaseColor","vertexRadius","edgeRadius","backgroundColor", "rotationSpeed"];
     for (let arg of keys) {
         arr.push("" + arg + "=" + parameters[arg]);
     }
+    arr.push("rotationDirection=" + parameters.rotationDirection.x+","+ parameters.rotationDirection.y+","+ parameters.rotationDirection.z);
     const newAdditionalURL = arr.join("&").replace("#","");
     const baseURL = window.location.href.split("?")[0];
     const newUrl = baseURL + "?" + newAdditionalURL;
@@ -374,6 +390,11 @@ function quaternionFromDir(direction) {
 
 function animate() {
     requestAnimationFrame(animate);
+    const delta = gClock.getDelta();
+    gElapsedTime += delta;
+    if (gParameters.rotationSpeed != 0){
+        gPolyhedronMesh.quaternion.setFromAxisAngle( gParameters.rotationDirection,  gElapsedTime * gParameters.rotationSpeed);
+    }
     render();
     update();
 }
@@ -548,7 +569,6 @@ function loadFileFromLocal(file) {
 }
 
 function onDocumentKeyDown(event) {
-    console.log(event);
     //https://www.freecodecamp.org/news/javascript-keycode-list-keypress-event-key-codes/
     const keyCode = event.which;
     if (keyCode == 53) {
