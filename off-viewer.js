@@ -37,7 +37,7 @@ const gParameters = {
     vertexRadius: clamp(parseFloat(getURLParameter("vertexRadius", 0.03)), 0.0, 1.0),
     edgeRadius: clamp(parseFloat(getURLParameter("edgeRadius", 0.02)), 0.0, 1.0),
     rotationDirection : parseVec3(getURLParameter("rotationDirection", "0,1,0")),
-    rotationSpeed: parseFloat(getURLParameter("rotationSpeed", 1.0)),
+    rotationSpeed: parseFloat(getURLParameter("rotationSpeed", 0.0)),
 };
 gParameters.rotationDirection.normalize();
 
@@ -574,6 +574,7 @@ function onDocumentKeyDown(event) {
     if (keyCode == 53) {
         //mambo number 5
         gCamera.position.set(...defaultCamPos);
+        gElapsedTime = 0;
     }
 };
 
