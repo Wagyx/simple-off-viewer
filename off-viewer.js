@@ -23,8 +23,11 @@ let gElapsedTime = 0;
 const gDefaultColor = [1., 1., 1.];
 // custom global variables
 let gPolyhedronMesh, gVerticesMesh, gEdgesMesh, gFacesMesh, gTextureEquirec;
-const defaultCamPos = [0, 0, 45];
-
+const gcCamZ = {
+    pos: [0, 0, 45],
+    up: [0, 1, 0],
+    target: [0, 0, 0]
+};
 const clamp = (num, min, max) => Math.min(Math.max(num, min), max);
 const gParameters = {
     transparency: clamp(parseFloat(getURLParameter("transparency", 0.0)), 0.0, 1.0),
@@ -58,8 +61,7 @@ function init() {
     const far = 1000;
     gCamera = new THREE.PerspectiveCamera(viewAngle, width / height, near, far);
     gScene.add(gCamera);
-    gCamera.position.set(...defaultCamPos);
-    gCamera.lookAt(gScene.position);
+    resetCamera();
 
     const light = new THREE.DirectionalLight(0xffffff, 0.5);
     gCamera.add(light);
@@ -568,12 +570,18 @@ function loadFileFromLocal(file) {
     }
 }
 
+function resetCamera(){
+    gCamera.position.set(...gcCamZ.pos);
+    gCamera.up.set(...gcCamZ.up);
+    gCamera.lookAt(...gcCamZ.target);
+}
+
 function onDocumentKeyDown(event) {
     //https://www.freecodecamp.org/news/javascript-keycode-list-keypress-event-key-codes/
     const keyCode = event.which;
     if (keyCode == 53) {
         //mambo number 5
-        gCamera.position.set(...defaultCamPos);
+        resetCamera();
         gElapsedTime = 0;
     }
 };
