@@ -105,7 +105,7 @@ class AntiprismOffLoader extends Loader {
 			if (faceNum > 2) {
 				result.faces.push(vertexData.slice(1, faceNum + 1).map(el => parseFloat(el, 10)));
 				if (vertexData.length > faceNum + 1) {
-					result.facesColor.push(vertexData.slice(faceNum + 1).map(el => parseFloat(el, 10)));
+					result.facesColor.push(parseColor(vertexData.slice(faceNum + 1)));
 				}
 			}
 			else if (faceNum == 2) {
@@ -120,12 +120,12 @@ class AntiprismOffLoader extends Loader {
 				}
 				result.edges.push(edge);
 				if (vertexData.length > faceNum + 1) {
-					result.edgesColor.push(vertexData.slice(faceNum + 1).map(el => parseFloat(el, 10)));
+					result.edgesColor.push(parseColor(vertexData.slice(faceNum + 1)));
 				}
 			}
 			else if (faceNum == 1) {
 				if (vertexData.length > faceNum + 1) {
-					result.verticesColor.push(vertexData.slice(faceNum + 1).map(el => parseFloat(el, 10)));
+					result.verticesColor.push(parseColor(vertexData.slice(faceNum + 1)));
 				}
 			}
 		}
@@ -154,6 +154,13 @@ class AntiprismOffLoader extends Loader {
 		}
 		return result;
 	}
+}
+function parseColor(colorStringArray){
+	let isFloat=false;
+	for (let el in colorStringArray){
+		isFloat = isFloat || el.includes(".");
+	}
+	return colorStringArray.map(el=> isFloat ? parseFloat(el, 10): parseInt(el,10)/255.0);
 }
 
 export {
