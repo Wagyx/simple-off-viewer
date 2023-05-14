@@ -20,7 +20,7 @@ const POLYHEDRA=[];
 let gNumMaxVertices = 1;
 let gNumMaxEdges = 1;
 let gElapsedTime = 0;
-const gDefaultColor = [1., 1., 1.];
+const gDefaultColor = {vertex:[1.0,0.5,0.0], edge:[0.8,0.6,0.8], face:[0.8,0.9,0.9]};
 // custom global variables
 let gPolyhedronMesh, gVerticesMesh, gEdgesMesh, gFacesMesh, gTextureEquirec;
 const gcCamZ = {
@@ -117,8 +117,8 @@ function init() {
         loadFileFromUrl(gParameters.url);
     }
     else {
-        const obj={filename:"off/U1.off"};
-        // const obj={filename:"off/uc61.off"};
+        // const obj={filename:"off/U1.off"};
+        const obj={filename:"off/mixed_cols.off"};
         loadOffPoly(obj)
     }
 
@@ -140,7 +140,7 @@ function parseVec3(pString){
 }
 
 function makeEdgesMesh(nbMaxEdges) {
-    const defaultColor = new THREE.Color(...gDefaultColor);
+    const defaultColor = new THREE.Color(...gDefaultColor.edge);
     const edgeMaterial = new THREE.MeshStandardMaterial({
         color: gParameters.useBaseColor ? 0xffffff : 0x000000,
         roughness: 0.5,
@@ -157,7 +157,7 @@ function makeEdgesMesh(nbMaxEdges) {
 }
 
 function makeVerticesMesh(nbMaxVertices) {
-    const defaultColor = new THREE.Color(...gDefaultColor);
+    const defaultColor = new THREE.Color(...gDefaultColor.vertex);
     const vertexMaterial = new THREE.MeshStandardMaterial({
         color: gParameters.useBaseColor ? 0xffffff : 0x000000,
         roughness: 0.5,
@@ -473,19 +473,19 @@ function addMissingColors(obj) {
     if (obj.verticesColor.length < obj.vertices.length) {
         const l = obj.vertices.length - obj.verticesColor.length;
         for (let i = 0; i < l; ++i) {
-            obj.verticesColor.push(gDefaultColor);
+            obj.verticesColor.push(gDefaultColor.vertex);
         }
     }
     if (obj.facesColor.length < obj.faces.length) {
         const l = obj.faces.length - obj.facesColor.length;
         for (let i = 0; i < l; ++i) {
-            obj.facesColor.push(gDefaultColor);
+            obj.facesColor.push(gDefaultColor.face);
         }
     }
     if (obj.edgesColor.length < obj.edges.length) {
         const l = obj.edges.length - obj.edgesColor.length;
         for (let i = 0; i < l; ++i) {
-            obj.edgesColor.push(gDefaultColor);
+            obj.edgesColor.push(gDefaultColor.edge);
         }
     }
     return obj
