@@ -157,7 +157,7 @@ class AntiprismOffLoader extends Loader {
 }
 function parseColor(colorStringArray){
 	let isFloat=false;
-	for (let el in colorStringArray){
+	for (let el of colorStringArray){
 		isFloat = isFloat || el.includes(".");
 	}
 	return colorStringArray.map(el=> isFloat ? parseFloat(el, 10): parseInt(el,10)/255.0);
