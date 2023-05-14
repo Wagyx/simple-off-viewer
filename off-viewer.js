@@ -118,6 +118,7 @@ function init() {
     }
     else {
         const obj={filename:"off/U1.off"};
+        // const obj={filename:"off/uc61.off"};
         loadOffPoly(obj)
     }
 
@@ -160,7 +161,7 @@ function makeVerticesMesh(nbMaxVertices) {
     const vertexMaterial = new THREE.MeshStandardMaterial({
         color: gParameters.useBaseColor ? 0xffffff : 0x000000,
         roughness: 0.5,
-        metalness: 0.5,
+        metalness: 0.,
         // envMap:gTextureEquirec,
         visible: gParameters.verticesActive,
     });
@@ -248,7 +249,7 @@ function displayPolyhedron(data) {
         gVerticesMesh.count = data.vertices.length;
         for (let i = 0; i < data.vertices.length; i++) {
             let position = vertices[i];
-            if (data.edgesColor[i].length == 4 && data.edgesColor[i][3] == 0) {
+            if (data.verticesColor[i].length == 4 && data.verticesColor[i][3] == 0.0) {
                 position = new THREE.Vector3(1e6, 1e6, 1e6);
             }
             const M = new THREE.Matrix4().makeTranslation(position.x, position.y, position.z);
@@ -272,7 +273,7 @@ function displayPolyhedron(data) {
             const direction = new THREE.Vector3().subVectors(point1, point0);
             const d = direction.length();
             let position = new THREE.Vector3().addVectors(point0, direction.multiplyScalar(0.5));
-            if (data.edgesColor[i].length == 4 && data.edgesColor[i][3] == 0) {
+            if (data.edgesColor[i].length == 4 && data.edgesColor[i][3] == 0.0) {
                 position = new THREE.Vector3(1e6, 1e6, 1e6);
             }
             direction.normalize();
