@@ -16,11 +16,11 @@ import {
 // standard global variables
 let gContainer, gScene, gCamera, gRenderer, gControls;
 let gCurrInd = -1;
-const POLYHEDRA=[];
+const POLYHEDRA = [];
 let gNumMaxVertices = 1;
 let gNumMaxEdges = 1;
 let gElapsedTime = 0;
-const gDefaultColor = {vertex:[1.0,0.5,0.0], edge:[0.8,0.6,0.8], face:[0.8,0.9,0.9]};
+const gDefaultColor = { vertex: [1.0, 0.5, 0.0], edge: [0.8, 0.6, 0.8], face: [0.8, 0.9, 0.9] };
 // custom global variables
 let gPolyhedronMesh, gVerticesMesh, gEdgesMesh, gFacesMesh, gTextureEquirec;
 const gcCamZ = {
@@ -36,10 +36,10 @@ const gParameters = {
     verticesActive: getURLParameter("verticesActive", "true") == "true",
     useBaseColor: getURLParameter("useBaseColor", "true") == "true",
     url: decodeURIComponent(getURLParameter("url", "")),
-    backgroundColor: "#"+getURLParameter("backgroundColor", "cccccc"),
+    backgroundColor: "#" + getURLParameter("backgroundColor", "cccccc"),
     vertexRadius: clamp(parseFloat(getURLParameter("vertexRadius", 0.03)), 0.0, 1.0),
     edgeRadius: clamp(parseFloat(getURLParameter("edgeRadius", 0.02)), 0.0, 1.0),
-    rotationDirection : parseVec3(getURLParameter("rotationDirection", "0,1,0")),
+    rotationDirection: parseVec3(getURLParameter("rotationDirection", "0,1,0")),
     rotationSpeed: parseFloat(getURLParameter("rotationSpeed", 0.0)),
 };
 gParameters.rotationDirection.normalize();
@@ -113,12 +113,11 @@ function init() {
     // GUI //
     /////////
 
-    if(gParameters.url){
+    if (gParameters.url) {
         loadFileFromUrl(gParameters.url);
     }
     else {
-        // const obj={filename:"off/U1.off"};
-        const obj={filename:"off/mixed_cols.off"};
+        const obj={filename:"off/U1.off"};
         loadOffPoly(obj)
     }
 
@@ -130,12 +129,12 @@ function init() {
 } // end of function init()
 
 
-function parseVec3(pString){
+function parseVec3(pString) {
     const arr = pString.split(",");
-    arr.forEach(function(el, index, arr) {
+    arr.forEach(function (el, index, arr) {
         arr[index] = parseFloat(el);
-      });
-    const vec = new THREE.Vector3(arr[0],arr[1],arr[2]);
+    });
+    const vec = new THREE.Vector3(arr[0], arr[1], arr[2]);
     return vec;
 }
 
@@ -190,12 +189,12 @@ function setUrlParameters(parameters) {
     if (parameters.url != "" && parameters.url !== undefined) {
         arr.push("url=" + encodeURIComponent(parameters.url));
     }
-    const keys = ["transparency", "edgesActive", "facesActive", "verticesActive", "useBaseColor","vertexRadius","edgeRadius","backgroundColor", "rotationSpeed"];
+    const keys = ["transparency", "edgesActive", "facesActive", "verticesActive", "useBaseColor", "vertexRadius", "edgeRadius", "backgroundColor", "rotationSpeed"];
     for (let arg of keys) {
         arr.push("" + arg + "=" + parameters[arg]);
     }
-    arr.push("rotationDirection=" + parameters.rotationDirection.x+","+ parameters.rotationDirection.y+","+ parameters.rotationDirection.z);
-    const newAdditionalURL = arr.join("&").replace("#","");
+    arr.push("rotationDirection=" + parameters.rotationDirection.x + "," + parameters.rotationDirection.y + "," + parameters.rotationDirection.z);
+    const newAdditionalURL = arr.join("&").replace("#", "");
     const baseURL = window.location.href.split("?")[0];
     const newUrl = baseURL + "?" + newAdditionalURL;
     window.history.replaceState('', '', newUrl);
@@ -395,8 +394,8 @@ function animate() {
     requestAnimationFrame(animate);
     const delta = gClock.getDelta();
     gElapsedTime += delta;
-    if (gParameters.rotationSpeed != 0){
-        gPolyhedronMesh.quaternion.setFromAxisAngle( gParameters.rotationDirection,  gElapsedTime * gParameters.rotationSpeed);
+    if (gParameters.rotationSpeed != 0) {
+        gPolyhedronMesh.quaternion.setFromAxisAngle(gParameters.rotationDirection, gElapsedTime * gParameters.rotationSpeed);
     }
     render();
     update();
@@ -470,25 +469,22 @@ function loadOffPoly(obj) {
 }
 
 function addMissingColors(obj) {
-    if (obj.verticesColor.length < obj.vertices.length) {
-        const l = obj.vertices.length - obj.verticesColor.length;
-        for (let i = 0; i < l; ++i) {
-            obj.verticesColor.push(gDefaultColor.vertex);
+    for (let i = 0, l = obj.verticesColor.length; i < l; ++i) {
+        if (obj.verticesColor[i] === undefined) {
+            obj.verticesColor[i] = gDefaultColor.vertex;
         }
     }
-    if (obj.facesColor.length < obj.faces.length) {
-        const l = obj.faces.length - obj.facesColor.length;
-        for (let i = 0; i < l; ++i) {
-            obj.facesColor.push(gDefaultColor.face);
+    for (let i = 0, l = obj.edgesColor.length; i < l; ++i) {
+        if (obj.edgesColor[i] === undefined) {
+            obj.edgesColor[i] = gDefaultColor.edge;
         }
     }
-    if (obj.edgesColor.length < obj.edges.length) {
-        const l = obj.edges.length - obj.edgesColor.length;
-        for (let i = 0; i < l; ++i) {
-            obj.edgesColor.push(gDefaultColor.edge);
+    for (let i = 0, l = obj.facesColor.length; i < l; ++i) {
+        if (obj.facesColor[i] === undefined) {
+            obj.facesColor[i] = gDefaultColor.face;
         }
     }
-    return obj
+    return obj;
 }
 
 function reinstantiateMeshes(obj) {
@@ -571,7 +567,7 @@ function loadFileFromLocal(file) {
     }
 }
 
-function resetCamera(){
+function resetCamera() {
     gCamera.position.set(...gcCamZ.pos);
     gCamera.up.set(...gcCamZ.up);
     gCamera.lookAt(...gcCamZ.target);
