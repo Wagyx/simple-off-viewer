@@ -307,6 +307,9 @@ function displayPolyhedron(data) {
         const points = [];
         const colors = [];
         for (let faceNum = 0; faceNum < data.faces.length; faceNum++) {
+            if (data.facesColor[faceNum].length == 4 && data.facesColor[faceNum][3] == 0.0) {
+                continue;
+            }
             const col = new THREE.Color(
                 data.facesColor[faceNum][0],
                 data.facesColor[faceNum][1],
