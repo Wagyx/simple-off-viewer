@@ -9,4 +9,4 @@ This viewer also correctly parses OFF files produced by Antiprism.
 
 
 If you want to see a more advanced verison of the viewer please visit.
-[https://asliceofcuriosity.pagesperso-orange.fr/blog/extra/polyhedra-viewer-antiprism.html](https://asliceofcuriosity.pagesperso-orange.fr/blog/extra/polyhedra-viewer-antiprism.html)
+[https://asliceofcuriosity.fr/blog/extra/polyhedra-viewer-antiprism.html](https://asliceofcuriosity.fr/blog/extra/polyhedra-viewer-antiprism.html)
