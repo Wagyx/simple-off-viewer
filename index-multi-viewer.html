@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<title>three.js webgl - multiple elements</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+	<script type="importmap">
+		{
+			"imports": {
+				"three": "/js/three.module.js"
+			}
+		}
+	</script>
+
+	<style>
+		.threeJS-viewer-canvas {
+			position: absolute;
+			left: 0;
+			top:0;
+			width: 100%;
+			height: 100%;
+			z-index: -1;
+		}
+
+		.threeJS-viewer {
+			display: inline-block;
+			width: 30%;
+			height: auto;
+			aspect-ratio: 1;
+			z-index: 1;
+		}
+	</style>
+	<script src="/js/es-module-shims.js"></script>
+</head>
+
+<body>
+	<p>hey</p>
+	<div class="threeJS-viewer" src="/off/U1.off" ></div>
+	<div class="threeJS-viewer" src="/off/U1.off" data-transparency="0.8" data-edges-active="true"
+		data-faces-active="true" data-vertices-active="false" data-use-basecolor="true" data-background-color="ff00ff"
+		data-vertex-radius="0.05" data-edge-radius="0.1" data-rotation-direction="1,0,0" data-rotation-speed="-1"></div>
+	<p>hey2</p>
+	<div class="threeJS-viewer" src="/off/U2.off"></div>
+	<p>hey3</p>
+	<div class="threeJS-viewer" src="/off/ico_rand.off"></div>
+	<div class="threeJS-viewer" src="/off/icube.off"></div>
+	<div class="threeJS-viewer" src="/off/J71.off"></div>
+	<div class="threeJS-viewer" src="/off/J81.off"></div>
+	<div class="threeJS-viewer" src="/off/mixed_cols.off"></div>
+	<div class="threeJS-viewer" src="/off/model3.off"></div>
+	<div class="threeJS-viewer" src="/off/model3a.off"></div>
+	<div class="threeJS-viewer" src="/off/uc61.off"></div>
+
+
+
+	<!-- Import maps -->
+	<!-- Remove this when import maps will be widely supported -->
+	<script type="module" src="/multi-off-viewer.js">
+
+	</script>
+</body>
+
+</html>
