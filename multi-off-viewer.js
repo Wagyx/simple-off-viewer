@@ -28,9 +28,21 @@ class PolyViewer {
         this.renderer.setClearColor(0xffffff, 1);
         this.renderer.setPixelRatio(window.devicePixelRatio);
 
+        const self=this;
+        //EVENTS
+        document.addEventListener("keydown", function (event) {
+            self.scenes.forEach(function (scene) {
+                const keyCode = event.key;
+                if (keyCode == "5") {
+                    resetCamera(scene.userData.camera);
+                    self.elapsedTime = 0;
+                }
+            });
+        });
+
         window.addEventListener('resize', this.updateSize);
     }
-    
+
     addScene(element) {
         // SCENE
         const scene = new THREE.Scene();
@@ -44,7 +56,7 @@ class PolyViewer {
         const viewAngle = 30;
         const near = 0.1;
         const far = 1000;
-        const camera = new THREE.PerspectiveCamera(viewAngle, width/height, near, far);
+        const camera = new THREE.PerspectiveCamera(viewAngle, width / height, near, far);
         scene.userData.camera = camera;
         resetCamera(camera);
         scene.add(camera);
@@ -71,10 +83,12 @@ class PolyViewer {
     }
 
     updateSize() {
-        const width = this.canvas.clientWidth;
-        const height = this.canvas.clientHeight;
-        if (this.canvas.width !== width || this.canvas.height !== height) {
-            this.renderer.setSize(width, height, false);
+        if (this.canvas) {
+            const width = this.canvas.clientWidth;
+            const height = this.canvas.clientHeight;
+            if (this.canvas.width !== width || this.canvas.height !== height) {
+                this.renderer.setSize(width, height, false);
+            }
         }
     }
 
@@ -93,7 +107,7 @@ class PolyViewer {
         const self = this;
         this.scenes.forEach(function (scene) {
             if (scene.userData.parameters.rotationSpeed != 0 && scene.children[2]) {
-                scene.children[2].quaternion.setFromAxisAngle(scene.userData.parameters.rotationDirection, self.elapsedTime * scene.userData.parameters.rotationSpeed);
+                scene.children[2].quaternion.setFromAxisAngle(scene.userData.parameters.rotationAxis, self.elapsedTime * scene.userData.parameters.rotationSpeed);
             }
             // so something moves
             // scene.children[ 0 ].rotation.y = Date.now() * 0.001;
@@ -140,63 +154,40 @@ function clamp(num, min, max) {
     return Math.min(Math.max(num, min), max);
 }
 function parseVec3(pString) {
-    const arr = pString.split(",");
-    arr.forEach(function (el, index, arr) {
-        arr[index] = parseFloat(el);
-    });
+    const arr = pString.split(",").map(x => parseFloat(x));
     const vec = new THREE.Vector3(arr[0], arr[1], arr[2]);
     return vec;
 }
+function parseColor(pString) {
+    if (!pString || pString[0] !== "#") {
+        return undefined;
+    }
+    const res = [
+        parseInt(pString.slice(1, 3), 16) / 255.0,
+        parseInt(pString.slice(3, 5), 16) / 255.0,
+        parseInt(pString.slice(5, 7), 16) / 255.0,
+        (pString.length > 7) ? parseInt(pString.slice(7, 9), 16) / 255.0 : 1.0
+    ];
+    return res;
+}
 function processAttributes(element) {
     const parameters = {
-        transparency: clamp(parseFloat(readAttributeOrDefault(element, "data-transparency", "0.0")), 0.0, 1.0),
-        edgesActive: readAttributeOrDefault(element, "data-edges-active", "true") == "true",
-        facesActive: readAttributeOrDefault(element, "data-faces-active", "true") == "true",
-        verticesActive: readAttributeOrDefault(element, "data-vertices-active", "true") == "true",
-        useBaseColor: readAttributeOrDefault(element, "data-use-basecolor", "true") == "true",
         url: readAttributeOrDefault(element, "src", "/off/U1.off"),
-        backgroundColor: new THREE.Color("#" + readAttributeOrDefault(element, "data-background-color", "cccccc")),
         vertexRadius: clamp(parseFloat(readAttributeOrDefault(element, "data-vertex-radius", "0.03")), 0.0, 1.0),
         edgeRadius: clamp(parseFloat(readAttributeOrDefault(element, "data-edge-radius", "0.02")), 0.0, 1.0),
-        rotationDirection: parseVec3(readAttributeOrDefault(element, "data-rotation-direction", "0,1,0")),
+        backgroundColor: new THREE.Color(readAttributeOrDefault(element, "data-background-color", "#cccccc")),
+        verticesActive: readAttributeOrDefault(element, "data-vertices-active", "true") == "true",
+        edgesActive: readAttributeOrDefault(element, "data-edges-active", "true") == "true",
+        facesActive: readAttributeOrDefault(element, "data-faces-active", "true") == "true",
+        rotationAxis: parseVec3(readAttributeOrDefault(element, "data-rotation-axis", "0,1,0")),
         rotationSpeed: parseFloat(readAttributeOrDefault(element, "data-rotation-speed", 0.0)),
+        vertexColor: parseColor(element.getAttribute("data-vertex-color")),
+        edgeColor: parseColor(element.getAttribute("data-edge-color")),
+        faceColor: parseColor(element.getAttribute("data-face-color")),
     };
-    parameters.rotationDirection.normalize();
+
+    parameters.rotationAxis.normalize();
     return parameters;
-}
-
-
-function createScene(filename, parameters) {
-    // SCENE
-    const scene = new THREE.Scene();
-
-    // CAMERA
-    const width = window.innerWidth;
-    const height = window.innerHeight;
-    const viewAngle = 30;
-    const near = 0.1;
-    const far = 1000;
-    const camera = new THREE.PerspectiveCamera(viewAngle, 1, near, far);
-    scene.userData.camera = camera;
-
-    resetCamera(camera);
-    scene.add(camera);
-
-    // LIGHTS
-    const light = new THREE.DirectionalLight(0xffffff, 0.5);
-    camera.add(light);
-    const light2 = new THREE.AmbientLight(0xffffff, 0.4);
-    scene.add(light2);
-
-    // const geometry = new THREE.BoxGeometry( 1, 1, 1 ); 
-    // const material = new THREE.MeshBasicMaterial( {color: 0x00ff00} ); 
-    // const cube = new THREE.Mesh( geometry, material ); 
-    // scene.add( cube );
-
-    // 3D MODEL
-    loadFileFromUrl(filename, scene, parameters);
-
-    return scene;
 }
 
 function arraySum(arr) {
@@ -229,15 +220,24 @@ function addMissingColors(obj) {
         if (obj.verticesColor[i] === undefined) {
             obj.verticesColor[i] = gDefaultColor.vertex;
         }
+        if (obj.verticesColor[i].length == 3) {
+            obj.verticesColor[i].push(1.0);
+        }
     }
     for (let i = 0, l = obj.edgesColor.length; i < l; ++i) {
         if (obj.edgesColor[i] === undefined) {
             obj.edgesColor[i] = gDefaultColor.edge;
         }
+        if (obj.edgesColor[i].length == 3) {
+            obj.edgesColor[i].push(1.0);
+        }
     }
     for (let i = 0, l = obj.facesColor.length; i < l; ++i) {
         if (obj.facesColor[i] === undefined) {
             obj.facesColor[i] = gDefaultColor.face;
+        }
+        if (obj.facesColor[i].length == 3) {
+            obj.facesColor[i].push(1.0);
         }
     }
     return obj;
@@ -274,135 +274,181 @@ function addObjectToscene(data, scene, parameters) {
 
     //MAKE VERTICES
     {
-        const vertexMaterial = new THREE.MeshStandardMaterial({
-            color: parameters.useBaseColor ? 0xffffff : 0x000000,
-            roughness: 0.5,
-            metalness: 0.,
-            // envMap:gTextureEquirec,
-            visible: parameters.verticesActive,
-        });
-        const vertexGeometry = new THREE.SphereGeometry(parameters.vertexRadius, 12 * 3, 6 * 3)
-        const verticesMesh = new THREE.InstancedMesh(vertexGeometry, vertexMaterial, data.vertices.length);
-
-        const S = new THREE.Matrix4().makeScale(scaleFactor, scaleFactor, scaleFactor);
-        for (let i = 0, l = data.vertices.length; i < l; i++) {
-            let position = vertices[i];
-            if (data.verticesColor[i].length == 4 && data.verticesColor[i][3] == 0.0) {
-                position = new THREE.Vector3(1e6, 1e6, 1e6);
+        if (parameters.vertexColor) {
+            for (let i = 0; i < data.verticesColor.length; i++) {
+                data.verticesColor[i] = parameters.vertexColor;
             }
-            const M = new THREE.Matrix4().makeTranslation(position.x, position.y, position.z);
-            verticesMesh.setMatrixAt(i, M.multiply(S));
-            verticesMesh.setColorAt(i, new THREE.Color(
-                data.verticesColor[i][0],
-                data.verticesColor[i][1],
-                data.verticesColor[i][2]));
         }
-        verticesMesh.instanceMatrix.needsUpdate = true;
-        verticesMesh.instanceColor.needsUpdate = true;
-        polyhedronMesh.add(verticesMesh);
+        const facesPerAlpha = {}
+        for (let i = 0; i < data.verticesColor.length; i++) {
+            const t = data.verticesColor[i][3];
+            if (!(Object.hasOwn(facesPerAlpha, t))) {
+                facesPerAlpha[t] = [];
+            }
+            facesPerAlpha[t].push(i);
+        }
+        for (let t in facesPerAlpha) {
+            if (t == 0)
+                continue;
+            const vertexMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.5,
+                metalness: 0.,
+                transparent: true,
+                opacity: t,
+                // envMap:gTextureEquirec,
+                visible: parameters.verticesActive,
+            });
+            const vertexGeometry = new THREE.SphereGeometry(parameters.vertexRadius, 12 * 3, 6 * 3)
+            const verticesMesh = new THREE.InstancedMesh(vertexGeometry, vertexMaterial, facesPerAlpha[t].length);
+
+            const S = new THREE.Matrix4().makeScale(scaleFactor, scaleFactor, scaleFactor);
+            for (let i in facesPerAlpha[t]) {
+                const ind = facesPerAlpha[t][i];
+                const position = vertices[ind];
+                const M = new THREE.Matrix4().makeTranslation(position.x, position.y, position.z);
+                verticesMesh.setMatrixAt(i, M.multiply(S));
+                verticesMesh.setColorAt(i, new THREE.Color(
+                    data.verticesColor[ind][0],
+                    data.verticesColor[ind][1],
+                    data.verticesColor[ind][2]));
+            }
+            verticesMesh.instanceMatrix.needsUpdate = true;
+            verticesMesh.instanceColor.needsUpdate = true;
+            polyhedronMesh.add(verticesMesh);
+        }
     }
 
     //MAKE EDGES
     {
-        const edgeMaterial = new THREE.MeshStandardMaterial({
-            color: parameters.useBaseColor ? 0xffffff : 0x000000,
-            roughness: 0.5,
-            metalness: 0.,
-            // envMap:gTextureEquirec,
-            visible: parameters.edgesActive,
-        });
-        const edgeGeometry = new THREE.CylinderGeometry(parameters.edgeRadius, parameters.edgeRadius, 1, 8 * 2, 4 * 2);
-        const edgesMesh = new THREE.InstancedMesh(edgeGeometry, edgeMaterial, data.edges.length);
-
-        // convert edge data to cylinders
-        for (let i = 0, l = data.edges.length; i < l; i++) {
-            const point0 = vertices[data.edges[i][0]];
-            const point1 = vertices[data.edges[i][1]];
-            const direction = new THREE.Vector3().subVectors(point1, point0);
-            const d = direction.length();
-            let position = new THREE.Vector3().addVectors(point0, direction.multiplyScalar(0.5));
-            if (data.edgesColor[i].length == 4 && data.edgesColor[i][3] == 0.0) {
-                position = new THREE.Vector3(1e6, 1e6, 1e6);
+        if (parameters.edgeColor) {
+            for (let i = 0; i < data.edgesColor.length; i++) {
+                data.edgesColor[i] = parameters.edgeColor;
             }
-            direction.normalize();
-            const scale = new THREE.Vector3(scaleFactor, d, scaleFactor);
-            const quaternion = quaternionFromDir(direction);
-            const M = new THREE.Matrix4().compose(position, quaternion, scale);
-            edgesMesh.setMatrixAt(i, M);
-            edgesMesh.setColorAt(i, new THREE.Color(
-                data.edgesColor[i][0],
-                data.edgesColor[i][1],
-                data.edgesColor[i][2]));
         }
-        edgesMesh.instanceMatrix.needsUpdate = true;
-        edgesMesh.instanceColor.needsUpdate = true;
-        polyhedronMesh.add(edgesMesh);
+        const facesPerAlpha = {}
+        for (let i = 0; i < data.edgesColor.length; i++) {
+            const t = data.edgesColor[i][3];
+            if (!(Object.hasOwn(facesPerAlpha, t))) {
+                facesPerAlpha[t] = [];
+            }
+            facesPerAlpha[t].push(i);
+        }
+        for (let t in facesPerAlpha) {
+            if (t == 0)
+                continue;
+            const edgeMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.5,
+                metalness: 0.,
+                transparent: true,
+                opacity: t,
+                // envMap:gTextureEquirec,
+                visible: parameters.edgesActive,
+            });
+            const edgeGeometry = new THREE.CylinderGeometry(parameters.edgeRadius, parameters.edgeRadius, 1, 8 * 2, 4 * 2);
+            const edgesMesh = new THREE.InstancedMesh(edgeGeometry, edgeMaterial, facesPerAlpha[t].length);
+
+            // convert edge data to cylinders
+            for (let i in facesPerAlpha[t]) {
+                const ind = facesPerAlpha[t][i];
+                const point0 = vertices[data.edges[ind][0]];
+                const point1 = vertices[data.edges[ind][1]];
+                const direction = new THREE.Vector3().subVectors(point1, point0);
+                const d = direction.length();
+                let position = new THREE.Vector3().addVectors(point0, direction.multiplyScalar(0.5));
+                direction.normalize();
+                const scale = new THREE.Vector3(scaleFactor, d, scaleFactor);
+                const quaternion = quaternionFromDir(direction);
+                const M = new THREE.Matrix4().compose(position, quaternion, scale);
+                edgesMesh.setMatrixAt(i, M);
+                edgesMesh.setColorAt(i, new THREE.Color(
+                    data.edgesColor[ind][0],
+                    data.edgesColor[ind][1],
+                    data.edgesColor[ind][2]));
+            }
+            edgesMesh.instanceMatrix.needsUpdate = true;
+            edgesMesh.instanceColor.needsUpdate = true;
+            polyhedronMesh.add(edgesMesh);
+        }
     }
 
     //MAKE FACES
     {
-        // convert face data to a single (triangulated) geometry
-        const faceMaterial = new THREE.MeshStandardMaterial({
-            color: 0xffffff,
-            roughness: 0.5,
-            metalness: 0.0,
-            vertexColors: THREE.FaceColors,
-            side: THREE.DoubleSide,
-            transparent: true,
-            opacity: 1.0 - parameters.transparency,
-            // envMap:gTextureEquirec,
-            visible: parameters.facesActive,
-        });
-
-        const points = [];
-        const colors = [];
-        for (let faceNum = 0; faceNum < data.faces.length; faceNum++) {
-            if (data.facesColor[faceNum].length == 4 && data.facesColor[faceNum][3] == 0.0) {
-                continue;
+        if (parameters.faceColor) {
+            for (let i = 0; i < data.facesColor.length; i++) {
+                data.facesColor[i] = parameters.faceColor;
             }
-            const col = new THREE.Color(
-                data.facesColor[faceNum][0],
-                data.facesColor[faceNum][1],
-                data.facesColor[faceNum][2]);
-            if (data.faces[faceNum].length == 3) {
-                const v0 = vertices[data.faces[faceNum][0]];
-                points.push(v0.x, v0.y, v0.z);
-                colors.push(col.r, col.g, col.b);
-                const v1 = vertices[data.faces[faceNum][1]];
-                points.push(v1.x, v1.y, v1.z);
-                colors.push(col.r, col.g, col.b);
-                const v2 = vertices[data.faces[faceNum][2]];
-                points.push(v2.x, v2.y, v2.z);
-                colors.push(col.r, col.g, col.b);
+        }
+        const facesPerAlpha = {}
+        for (let faceNum = 0; faceNum < data.facesColor.length; faceNum++) {
+            const t = data.facesColor[faceNum][3];
+            if (!(Object.hasOwn(facesPerAlpha, t))) {
+                facesPerAlpha[t] = [];
             }
-            else {
-                const faceCenter = new THREE.Vector3(0, 0, 0);
-                for (let i = 0, l = data.faces[faceNum].length; i < l; i++) {
-                    faceCenter.add(vertices[data.faces[faceNum][i]]);
-                }
-                faceCenter.multiplyScalar(1 / data.faces[faceNum].length);
+            facesPerAlpha[t].push(faceNum);
+        }
+        for (let t in facesPerAlpha) {
+            // convert face data to a single (triangulated) geometry
+            const faceMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.5,
+                metalness: 0.0,
+                vertexColors: THREE.FaceColors,
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: t,
+                // envMap:gTextureEquirec,
+                visible: parameters.facesActive,
+            });
 
-                for (let i = 0, l = data.faces[faceNum].length; i < l; i++) {
-                    points.push(faceCenter.x, faceCenter.y, faceCenter.z);
+            const points = [];
+            const colors = [];
+            for (let faceNum of facesPerAlpha[t]) {
+                const col = new THREE.Color(
+                    data.facesColor[faceNum][0],
+                    data.facesColor[faceNum][1],
+                    data.facesColor[faceNum][2]);
+                if (data.faces[faceNum].length == 3) {
+                    const v0 = vertices[data.faces[faceNum][0]];
+                    points.push(v0.x, v0.y, v0.z);
                     colors.push(col.r, col.g, col.b);
-                    const v1 = vertices[data.faces[faceNum][i]];
+                    const v1 = vertices[data.faces[faceNum][1]];
                     points.push(v1.x, v1.y, v1.z);
                     colors.push(col.r, col.g, col.b);
-                    const v2 = vertices[data.faces[faceNum][(i + 1) % l]];
+                    const v2 = vertices[data.faces[faceNum][2]];
                     points.push(v2.x, v2.y, v2.z);
                     colors.push(col.r, col.g, col.b);
                 }
-            }
-        }
-        const geometry = new THREE.BufferGeometry();
-        geometry.name = "trianglesSoup";
-        geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
-        geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-        geometry.computeVertexNormals();
-        geometry.computeBoundingSphere();
+                else {
+                    const faceCenter = new THREE.Vector3(0, 0, 0);
+                    for (let i = 0, l = data.faces[faceNum].length; i < l; i++) {
+                        faceCenter.add(vertices[data.faces[faceNum][i]]);
+                    }
+                    faceCenter.multiplyScalar(1 / data.faces[faceNum].length);
 
-        const facesMesh = new THREE.Mesh(geometry, faceMaterial);
-        polyhedronMesh.add(facesMesh);
+                    for (let i = 0, l = data.faces[faceNum].length; i < l; i++) {
+                        points.push(faceCenter.x, faceCenter.y, faceCenter.z);
+                        colors.push(col.r, col.g, col.b);
+                        const v1 = vertices[data.faces[faceNum][i]];
+                        points.push(v1.x, v1.y, v1.z);
+                        colors.push(col.r, col.g, col.b);
+                        const v2 = vertices[data.faces[faceNum][(i + 1) % l]];
+                        points.push(v2.x, v2.y, v2.z);
+                        colors.push(col.r, col.g, col.b);
+                    }
+                }
+            }
+            const geometry = new THREE.BufferGeometry();
+            geometry.name = "trianglesSoup";
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(points, 3));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.computeVertexNormals();
+            geometry.computeBoundingSphere();
+
+            const facesMesh = new THREE.Mesh(geometry, faceMaterial);
+            polyhedronMesh.add(facesMesh);
+        }
     }
     polyhedronMesh.scale.set(polyScaleFactor, polyScaleFactor, polyScaleFactor);
 }
@@ -453,6 +499,16 @@ function resetCamera(camera) {
     camera.up.set(...gcCamZ.up);
     camera.lookAt(...gcCamZ.target);
 }
+
+function onDocumentKeyDown(event) {
+    //https://www.freecodecamp.org/news/javascript-keycode-list-keypress-event-key-codes/
+    const keyCode = event.which;
+    if (keyCode == 53) {
+        //mambo number 5
+        resetCamera();
+        gElapsedTime = 0;
+    }
+};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
