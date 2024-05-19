@@ -11,13 +11,15 @@ class PolyViewer {
         this.elapsedTime = 0.0;
         this.clock = new THREE.Clock();
         this.scenes = [];
+        this.currentTarget = undefined;
     }
+
     init() {
         this.clock.start();
 
         this.canvas = document.createElement("canvas");
         this.canvas.className = "threeJS-viewer-canvas";
-        document.body.insertBefore(this.canvas, document.body.firstChild);
+        document.body.appendChild(this.canvas);
 
         const viewerDivs = document.getElementsByClassName('threeJS-viewer');
         for (let viewerDiv of viewerDivs) {
@@ -28,16 +30,74 @@ class PolyViewer {
         this.renderer.setClearColor(0xffffff, 1);
         this.renderer.setPixelRatio(window.devicePixelRatio);
 
-        const self=this;
+        const self = this;
         //EVENTS
-        document.addEventListener("keydown", function (event) {
-            self.scenes.forEach(function (scene) {
-                const keyCode = event.key;
-                if (keyCode == "5") {
-                    resetCamera(scene.userData.camera);
-                    self.elapsedTime = 0;
+        document.addEventListener("click", function (event) {
+            self.currentTarget = event.target;
+        });
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                const ind = self.scenes.findIndex(function (scene) {
+                    return scene.userData.element.isSameNode(self.currentTarget);
+                });
+                if (ind < 0) { return; }
+
+                if (self.currentTarget.requestFullScreen) {
+                    self.currentTarget.requestFullScreen();
                 }
-            });
+                else if (self.currentTarget.mozRequestFullScreen) {
+                    self.currentTarget.mozRequestFullScreen();
+                }
+                else if (self.currentTarget.webkitRequestFullScreen) {
+                    self.currentTarget.webkitRequestFullScreen();
+                }
+                else if (self.currentTarget.msRequestFullScreen) {
+                    self.currentTarget.msRequestFullScreen();
+                }
+                else { return; }
+                const tmp = self.scenes[ind];
+                self.scenes[ind] = self.scenes[self.scenes.length - 1];
+                self.scenes[self.scenes.length - 1] = tmp;
+                self.canvas.style["z-index"] = 1;
+            } else if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) { /* Safari */
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) { /* IE11 / Edge */
+                document.msExitFullscreen();
+            }
+            else if (document.mozExitFullScreen) { /* Firefox */
+                document.mozExitFullScreen();
+            }
+        }
+        document.addEventListener("dblclick", toggleFullscreen);
+
+        //exit Fulscreen
+        if (document.addEventListener) {
+            document.addEventListener('fullscreenchange', exitHandler, false);
+            document.addEventListener('mozfullscreenchange', exitHandler, false);
+            document.addEventListener('MSFullscreenChange', exitHandler, false);
+            document.addEventListener('webkitfullscreenchange', exitHandler, false);
+        }
+        function exitHandler() {
+            if (!document.webkitIsFullScreen && !document.mozFullScreen && !document.msFullscreenElement) {
+                self.canvas.style["z-index"] = "";
+            }
+        }
+
+        document.addEventListener("keydown", function (event) {
+            const keyCode = event.key;
+            if (keyCode == "5") {
+                self.scenes.forEach(function (scene) {
+                    if (scene.userData.element.isSameNode(self.currentTarget)) {
+                        resetCamera(scene.userData.camera);
+                        return;
+                    }
+                });
+            }
+            else if (keyCode == "f") {
+                toggleFullscreen();
+            }
         });
 
         window.addEventListener('resize', this.updateSize);
