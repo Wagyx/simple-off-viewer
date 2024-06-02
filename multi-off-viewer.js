@@ -12,6 +12,9 @@ class PolyViewer {
         this.clock = new THREE.Clock();
         this.scenes = [];
         this.currentTarget = undefined;
+        this.timer;
+        this.clicks=0;
+        this.timeout=350;
     }
 
     init() {
@@ -19,7 +22,8 @@ class PolyViewer {
 
         this.canvas = document.createElement("canvas");
         this.canvas.className = "threeJS-viewer-canvas";
-        document.body.appendChild(this.canvas);
+        // document.body.appendChild(this.canvas);
+        document.body.insertBefore(this.canvas, document.body.firstChild);
 
         const viewerDivs = document.getElementsByClassName('threeJS-viewer');
         for (let viewerDiv of viewerDivs) {
@@ -58,7 +62,7 @@ class PolyViewer {
                 const tmp = self.scenes[ind];
                 self.scenes[ind] = self.scenes[self.scenes.length - 1];
                 self.scenes[self.scenes.length - 1] = tmp;
-                self.canvas.style["z-index"] = 1;
+                self.canvas.style["z-index"] = 0;
             } else if (document.exitFullscreen) {
                 document.exitFullscreen();
             } else if (document.webkitExitFullscreen) { /* Safari */
@@ -70,7 +74,7 @@ class PolyViewer {
                 document.mozExitFullScreen();
             }
         }
-        document.addEventListener("dblclick", toggleFullscreen);
+        // document.addEventListener("dblclick", toggleFullscreen);
 
         //exit Fulscreen
         if (document.addEventListener) {
@@ -87,17 +91,36 @@ class PolyViewer {
 
         document.addEventListener("keydown", function (event) {
             const keyCode = event.key;
-            if (keyCode == "5") {
+            if (keyCode == "5" || keyCode == "R" || keyCode == "r") {
                 self.scenes.forEach(function (scene) {
                     if (scene.userData.element.isSameNode(self.currentTarget)) {
-                        resetCamera(scene.userData.camera);
+                        resetCamera(scene.userData.camera, scene.userData.controls);
                         return;
                     }
                 });
             }
-            else if (keyCode == "f") {
+            else if (keyCode == "f" || keyCode == "F") {
                 toggleFullscreen();
             }
+        });
+
+        document.addEventListener('click', function (evt) {
+            clearTimeout(self.timer);
+            self.clicks++;
+            self.timer = setTimeout(function() {
+              if(self.clicks==2) {
+                toggleFullscreen();
+              }
+              if(self.clicks==3) {
+                  self.scenes.forEach(function (scene) {
+                      if (scene.userData.element.isSameNode(self.currentTarget)) {
+                          resetCamera(scene.userData.camera, scene.userData.controls);
+                          return;
+                      }
+                  });
+              }
+              self.clicks = 0;
+            }, self.timeout);
         });
 
         window.addEventListener('resize', this.updateSize);
@@ -118,7 +141,6 @@ class PolyViewer {
         const far = 1000;
         const camera = new THREE.PerspectiveCamera(viewAngle, width / height, near, far);
         scene.userData.camera = camera;
-        resetCamera(camera);
         scene.add(camera);
 
         // LIGHTS
@@ -135,9 +157,11 @@ class PolyViewer {
         controls.rotateSpeed = 2.0;
         controls.maxDistance = 100.0;
         controls.minDistance = 5.0;
-        controls.enablePan = true;
-        controls.enableZoom = true;
+        controls.noPan = false;
+        controls.noZoom = false;
+        controls.noRotate = false;
         scene.userData.controls = controls;
+        resetCamera(camera, controls);
 
         this.scenes.push(scene)
     }
@@ -549,7 +573,7 @@ function loadFileFromUrl(url, scene, parameters) {
 
 }
 
-function resetCamera(camera) {
+function resetCamera(camera, controls) {
     const gcCamZ = {
         pos: [0, 0, 45],
         up: [0, 1, 0],
@@ -558,17 +582,8 @@ function resetCamera(camera) {
     camera.position.set(...gcCamZ.pos);
     camera.up.set(...gcCamZ.up);
     camera.lookAt(...gcCamZ.target);
+    controls.target = new THREE.Vector3(0, 0, 0);
 }
-
-function onDocumentKeyDown(event) {
-    //https://www.freecodecamp.org/news/javascript-keycode-list-keypress-event-key-codes/
-    const keyCode = event.which;
-    if (keyCode == 53) {
-        //mambo number 5
-        resetCamera();
-        gElapsedTime = 0;
-    }
-};
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 
