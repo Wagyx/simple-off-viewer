@@ -13,8 +13,9 @@ class PolyViewer {
         this.scenes = [];
         this.currentTarget = undefined;
         this.timer;
-        this.clicks=0;
-        this.timeout=350;
+        this.clicks = 0;
+        this.timeout = 350;
+        this.indFullScreen = -1;
     }
 
     init() {
@@ -39,56 +40,36 @@ class PolyViewer {
         document.addEventListener("click", function (event) {
             self.currentTarget = event.target;
         });
+
         function toggleFullscreen() {
-            if (!document.fullscreenElement) {
-                const ind = self.scenes.findIndex(function (scene) {
+            if (self.indFullScreen < 0) {
+                self.indFullScreen = self.scenes.findIndex(function (scene) {
                     return scene.userData.element.isSameNode(self.currentTarget);
                 });
-                if (ind < 0) { return; }
+                if (self.indFullScreen < 0) { return; }
 
-                if (self.currentTarget.requestFullScreen) {
-                    self.currentTarget.requestFullScreen();
-                }
-                else if (self.currentTarget.mozRequestFullScreen) {
-                    self.currentTarget.mozRequestFullScreen();
-                }
-                else if (self.currentTarget.webkitRequestFullScreen) {
-                    self.currentTarget.webkitRequestFullScreen();
-                }
-                else if (self.currentTarget.msRequestFullScreen) {
-                    self.currentTarget.msRequestFullScreen();
-                }
-                else { return; }
-                const tmp = self.scenes[ind];
-                self.scenes[ind] = self.scenes[self.scenes.length - 1];
-                self.scenes[self.scenes.length - 1] = tmp;
-                self.canvas.style["z-index"] = 0;
-            } else if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) { /* Safari */
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) { /* IE11 / Edge */
-                document.msExitFullscreen();
-            }
-            else if (document.mozExitFullScreen) { /* Firefox */
-                document.mozExitFullScreen();
-            }
-        }
-        // document.addEventListener("dblclick", toggleFullscreen);
+                self.canvas.style["z-index"] = "0"; //to be above text
 
-        //exit Fulscreen
-        if (document.addEventListener) {
-            document.addEventListener('fullscreenchange', exitHandler, false);
-            document.addEventListener('mozfullscreenchange', exitHandler, false);
-            document.addEventListener('MSFullscreenChange', exitHandler, false);
-            document.addEventListener('webkitfullscreenchange', exitHandler, false);
-        }
-        function exitHandler() {
-            if (!document.webkitIsFullScreen && !document.mozFullScreen && !document.msFullscreenElement) {
+                const scene = self.scenes[self.indFullScreen];
+                scene.userData.element.style["position"] = "fixed"; //to fill the browser window
+                scene.userData.element.style["left"] = "0";
+                scene.userData.element.style["top"] = "0";
+                document.body.style["overflow"] = "hidden";
+            }
+            else {
                 self.canvas.style["z-index"] = "";
+                const scene = self.scenes[self.indFullScreen];
+                scene.userData.element.style["position"] = "";
+                scene.userData.element.style["left"] = "";
+                scene.userData.element.style["top"] = "";
+                scene.userData.element.style["width"] = "";
+                scene.userData.element.style["height"] = "";
+                document.body.style["overflow"] = "";
+
+                self.indFullScreen = -1;
             }
         }
-
+        
         document.addEventListener("keydown", function (event) {
             const keyCode = event.key;
             if (keyCode == "5" || keyCode == "R" || keyCode == "r") {
@@ -103,23 +84,24 @@ class PolyViewer {
                 toggleFullscreen();
             }
         });
-
+        
+        // document.addEventListener("dblclick", toggleFullscreen);
         document.addEventListener('click', function (evt) {
             clearTimeout(self.timer);
             self.clicks++;
-            self.timer = setTimeout(function() {
-              if(self.clicks==2) {
-                toggleFullscreen();
-              }
-              if(self.clicks==3) {
-                  self.scenes.forEach(function (scene) {
-                      if (scene.userData.element.isSameNode(self.currentTarget)) {
-                          resetCamera(scene.userData.camera, scene.userData.controls);
-                          return;
-                      }
-                  });
-              }
-              self.clicks = 0;
+            self.timer = setTimeout(function () {
+                if (self.clicks == 2) {
+                    toggleFullscreen();
+                }
+                if (self.clicks == 3) {
+                    self.scenes.forEach(function (scene) {
+                        if (scene.userData.element.isSameNode(self.currentTarget)) {
+                            resetCamera(scene.userData.camera, scene.userData.controls);
+                            return;
+                        }
+                    });
+                }
+                self.clicks = 0;
             }, self.timeout);
         });
 
@@ -172,10 +154,44 @@ class PolyViewer {
             const height = this.canvas.clientHeight;
             if (this.canvas.width !== width || this.canvas.height !== height) {
                 this.renderer.setSize(width, height, false);
+                if (this.indFullScreen >= 0) {
+                    const scene = this.scenes[this.indFullScreen];
+                    scene.userData.element.style["width"] = "" + width + "px";
+                    scene.userData.element.style["height"] = "" + height + "px";
+                }
             }
         }
     }
 
+
+    _renderScene(scene) {
+        if (scene.userData.parameters.rotationSpeed != 0 && scene.children[2]) {
+            scene.children[2].quaternion.setFromAxisAngle(scene.userData.parameters.rotationAxis, this.elapsedTime * scene.userData.parameters.rotationSpeed);
+        }
+
+        // get the element that is a place holder for where we want to draw the scene
+        const element = scene.userData.element;
+        // get its position relative to the page's viewport
+        const rect = element.getBoundingClientRect();
+        // check if it's offscreen. If so skip it
+        if (rect.bottom < 0 || rect.top > this.renderer.domElement.clientHeight ||
+            rect.right < 0 || rect.left > this.renderer.domElement.clientWidth) {
+            return; // it's off screen
+        }
+
+        // set the viewport
+        const bottom = this.renderer.domElement.clientHeight - rect.bottom;
+        this.renderer.setViewport(rect.left, bottom, rect.width, rect.height);
+        this.renderer.setScissor(rect.left, bottom, rect.width, rect.height);
+
+        const camera = scene.userData.camera;
+        camera.aspect = rect.width / rect.height; // not changing in this example
+        camera.updateProjectionMatrix();
+
+        scene.userData.controls.update();
+
+        this.renderer.render(scene, camera);
+    }
 
     render() {
         this.updateSize();
@@ -188,42 +204,14 @@ class PolyViewer {
 
         const delta = this.clock.getDelta();
         this.elapsedTime += delta;
-        const self = this;
-        this.scenes.forEach(function (scene) {
-            if (scene.userData.parameters.rotationSpeed != 0 && scene.children[2]) {
-                scene.children[2].quaternion.setFromAxisAngle(scene.userData.parameters.rotationAxis, self.elapsedTime * scene.userData.parameters.rotationSpeed);
-            }
-            // so something moves
-            // scene.children[ 0 ].rotation.y = Date.now() * 0.001;
-
-            // get the element that is a place holder for where we want to
-            // draw the scene
-            const element = scene.userData.element;
-
-            // get its position relative to the page's viewport
-            const rect = element.getBoundingClientRect();
-
-            // check if it's offscreen. If so skip it
-            if (rect.bottom < 0 || rect.top > self.renderer.domElement.clientHeight ||
-                rect.right < 0 || rect.left > self.renderer.domElement.clientWidth) {
-                return; // it's off screen
-            }
-
-            // set the viewport
-            const bottom = self.renderer.domElement.clientHeight - rect.bottom;
-            self.renderer.setViewport(rect.left, bottom, rect.width, rect.height);
-            self.renderer.setScissor(rect.left, bottom, rect.width, rect.height);
-
-            const camera = scene.userData.camera;
-            camera.aspect = rect.width / rect.height; // not changing in this example
-            camera.updateProjectionMatrix();
-
-            scene.userData.controls.update();
-
-            self.renderer.render(scene, camera);
-        });
+        
+        if (this.indFullScreen < 0) {
+            this.scenes.forEach(scene=>this._renderScene(scene));
+        }
+        else {
+            this._renderScene(this.scenes[this.indFullScreen]);
+        }
     }
-
 }
 
 
