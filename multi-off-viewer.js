@@ -80,7 +80,7 @@ class PolyViewer {
                     }
                 });
             }
-            else if (keyCode == "f" || keyCode == "F") {
+            else if (keyCode == "f" || keyCode == "F" || (keyCode == "Escape" && self.indFullScreen >= 0)) {
                 toggleFullscreen();
             }
         });
