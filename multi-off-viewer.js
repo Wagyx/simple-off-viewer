@@ -10,6 +10,7 @@ class PolyViewer {
     constructor() {
         this.elapsedTime = 0.0;
         this.clock = new THREE.Clock();
+        this.delta = 0;
         this.scenes = [];
         this.currentTarget = undefined;
         this.timer;
@@ -69,6 +70,16 @@ class PolyViewer {
                 self.indFullScreen = -1;
             }
         }
+
+        function toggleRotation(){
+            const ind = self.scenes.findIndex(function (scene) {
+                return scene.userData.element.isSameNode(self.currentTarget);
+            });
+            if (ind < 0) { return; }
+            const scene = self.scenes[ind];
+            console.log(scene.userData.parameters.rotationActive);
+            scene.userData.parameters.rotationActive = ! scene.userData.parameters.rotationActive;
+        }
         
         document.addEventListener("keydown", function (event) {
             const keyCode = event.key;
@@ -82,6 +93,9 @@ class PolyViewer {
             }
             else if (keyCode == "f" || keyCode == "F" || (keyCode == "Escape" && self.indFullScreen >= 0)) {
                 toggleFullscreen();
+                }
+            else if (keyCode == "s" || keyCode == "S") {
+                toggleRotation();
             }
         });
         
@@ -111,6 +125,7 @@ class PolyViewer {
     addScene(element) {
         // SCENE
         const scene = new THREE.Scene();
+        scene.userData.elapsedTime = 0;
         scene.userData.element = element;
         scene.userData.parameters = processAttributes(scene.userData.element);
         scene.background = scene.userData.parameters.backgroundColor;
@@ -165,8 +180,10 @@ class PolyViewer {
 
 
     _renderScene(scene) {
-        if (scene.userData.parameters.rotationSpeed != 0 && scene.children[2]) {
-            scene.children[2].quaternion.setFromAxisAngle(scene.userData.parameters.rotationAxis, this.elapsedTime * scene.userData.parameters.rotationSpeed);
+        
+        if (scene.userData.parameters.rotationActive && scene.userData.parameters.rotationSpeed != 0 && scene.children[2]) {
+            scene.userData.elapsedTime+= this.delta;
+            scene.children[2].quaternion.setFromAxisAngle(scene.userData.parameters.rotationAxis, scene.userData.elapsedTime * scene.userData.parameters.rotationSpeed);
         }
 
         // get the element that is a place holder for where we want to draw the scene
@@ -201,10 +218,8 @@ class PolyViewer {
         //background color
         // this.renderer.setClearColor(0xcccccc); //backgroundColor
         this.renderer.setScissorTest(true);
+        this.delta = this.clock.getDelta();
 
-        const delta = this.clock.getDelta();
-        this.elapsedTime += delta;
-        
         if (this.indFullScreen < 0) {
             this.scenes.forEach(scene=>this._renderScene(scene));
         }
@@ -253,6 +268,7 @@ function processAttributes(element) {
         facesActive: readAttributeOrDefault(element, "data-faces-active", "true") == "true",
         rotationAxis: parseVec3(readAttributeOrDefault(element, "data-rotation-axis", "0,1,0")),
         rotationSpeed: parseFloat(readAttributeOrDefault(element, "data-rotation-speed", 0.0)),
+        rotationActive: readAttributeOrDefault(element, "data-rotation-active", "true") == "true",
         vertexColor: parseColor(element.getAttribute("data-vertex-color")),
         edgeColor: parseColor(element.getAttribute("data-edge-color")),
         faceColor: parseColor(element.getAttribute("data-face-color")),
