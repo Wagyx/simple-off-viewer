@@ -15,6 +15,13 @@
 	</script>
 
 	<style>
+		:root {
+			--data-background-color: #33aa33;
+			--data-fullscreen-background-color: #3333aa;
+		  }
+		body {
+			background-color: gold;
+		}
 		.threeJS-viewer-canvas {
 			position: absolute;
 			left: 0;
@@ -39,8 +46,8 @@
 		This is a test page
 		<a href="#">the link should remain clickable</a>
 	</p>
-	<div class="threeJS-viewer" src="/off/U1.off"></div>
-	<div class="threeJS-viewer" src="/off/U1.off" data-background-color="#00aa99" data-edge-color="#aaffff00"
+	<div class="threeJS-viewer" data-background-color="0" data-fullscreen-background-color="#aa3333" src="/off/U1.off"></div>
+	<div class="threeJS-viewer" src="/off/U1.off" data-background-color="#00aa99" data-fullscreen-background-color="0" data-edge-color="#aaffff00"
 		data-vertex-color="#ffffaaff" data-face-color="#aaaaff00" data-vertex-radius="0.05" data-edge-radius="0.1"
 		data-rotation-axis="1,0,0" data-rotation-speed="-1"></div>
 	<p>Lorem

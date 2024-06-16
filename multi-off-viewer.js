@@ -17,6 +17,8 @@ class PolyViewer {
         this.clicks = 0;
         this.timeout = 350;
         this.indFullScreen = -1;
+        this.backgroundColor=null;
+        this.backgroundFullScreenColor=null;
     }
 
     init() {
@@ -27,13 +29,17 @@ class PolyViewer {
         // document.body.appendChild(this.canvas);
         document.body.insertBefore(this.canvas, document.body.firstChild);
 
+        const rootStyle = getComputedStyle(document.querySelector(':root'));
+        this.backgroundColor = rootStyle.getPropertyValue('--data-background-color');
+        this.backgroundFullScreenColor = rootStyle.getPropertyValue('--data-fullscreen-background-color');
+
         const viewerDivs = document.getElementsByClassName('threeJS-viewer');
         for (let viewerDiv of viewerDivs) {
             this.addScene(viewerDiv);
         }
 
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
-        this.renderer.setClearColor(0xffffff, 1);
+        this.renderer.setClearAlpha(0);
         this.renderer.setPixelRatio(window.devicePixelRatio);
 
         const self = this;
@@ -56,6 +62,11 @@ class PolyViewer {
                 scene.userData.element.style["left"] = "0";
                 scene.userData.element.style["top"] = "0";
                 document.body.style["overflow"] = "hidden";
+
+                scene.background = null;
+                if (scene.userData.parameters.backgroundFullScreenColor){
+                    scene.background = new THREE.Color(...scene.userData.parameters.backgroundFullScreenColor.slice(0,3));
+                }
             }
             else {
                 self.canvas.style["z-index"] = "";
@@ -66,6 +77,11 @@ class PolyViewer {
                 scene.userData.element.style["width"] = "";
                 scene.userData.element.style["height"] = "";
                 document.body.style["overflow"] = "";
+
+                scene.background = null;
+                if (scene.userData.parameters.backgroundColor){
+                    scene.background = new THREE.Color(...scene.userData.parameters.backgroundColor.slice(0,3));
+                }
 
                 self.indFullScreen = -1;
             }
@@ -128,7 +144,11 @@ class PolyViewer {
         scene.userData.elapsedTime = 0;
         scene.userData.element = element;
         scene.userData.parameters = processAttributes(scene.userData.element);
-        scene.background = scene.userData.parameters.backgroundColor;
+        scene.userData.parameters.backgroundColor = parseColor(readAttributeOrDefault(element, "data-background-color", this.backgroundColor));
+        scene.userData.parameters.backgroundFullScreenColor = parseColor(readAttributeOrDefault(element, "data-fullscreen-background-color", this.backgroundFullScreenColor));
+        if (scene.userData.parameters.backgroundColor){
+            scene.background = new THREE.Color(...scene.userData.parameters.backgroundColor.slice(0,3));
+        }
 
         // CAMERA
         const width = window.innerWidth;
@@ -262,7 +282,7 @@ function processAttributes(element) {
         url: readAttributeOrDefault(element, "src", "/off/U1.off"),
         vertexRadius: clamp(parseFloat(readAttributeOrDefault(element, "data-vertex-radius", "0.03")), 0.0, 1.0),
         edgeRadius: clamp(parseFloat(readAttributeOrDefault(element, "data-edge-radius", "0.02")), 0.0, 1.0),
-        backgroundColor: new THREE.Color(readAttributeOrDefault(element, "data-background-color", "#cccccc")),
+        backgroundColor: parseColor(readAttributeOrDefault(element, "data-background-color", "#cccccc")),
         verticesActive: readAttributeOrDefault(element, "data-vertices-active", "true") == "true",
         edgesActive: readAttributeOrDefault(element, "data-edges-active", "true") == "true",
         facesActive: readAttributeOrDefault(element, "data-faces-active", "true") == "true",
