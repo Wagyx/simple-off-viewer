@@ -200,16 +200,12 @@ function setUrlParameters(parameters) {
     window.history.replaceState('', '', newUrl);
 }
 
+function arraySum(arr) {
+    return arr.reduce((partialSum, a) => partialSum + a, 0);
+}
+
 function arrayAverage(arr) {
-    //Find the sum
-    let sum = 0;
-    for (let i in arr) {
-        sum += arr[i];
-    }
-    //Get the length of the array
-    const numbersCnt = arr.length;
-    //Return the average / mean.
-    return (sum / numbersCnt);
+    return arraySum(arr) / arr.length;
 }
 
 function displayPolyhedron(data) {
