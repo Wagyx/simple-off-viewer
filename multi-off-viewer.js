@@ -91,7 +91,6 @@ class PolyViewer {
             });
             if (ind < 0) { return; }
             const scene = self.scenes[ind];
-            console.log(scene.userData.parameters.rotationActive);
             scene.userData.parameters.rotationActive = ! scene.userData.parameters.rotationActive;
         }
         
@@ -196,12 +195,6 @@ class PolyViewer {
 
 
     _renderScene(scene) {
-        
-        if (scene.userData.parameters.rotationActive && scene.userData.parameters.rotationSpeed != 0 && scene.children[2]) {
-            scene.userData.elapsedTime+= this.delta;
-            scene.children[2].quaternion.setFromAxisAngle(scene.userData.parameters.rotationAxis, scene.userData.elapsedTime * scene.userData.parameters.rotationSpeed);
-        }
-
         // get the element that is a place holder for where we want to draw the scene
         const element = scene.userData.element;
         // get its position relative to the page's viewport
@@ -211,6 +204,12 @@ class PolyViewer {
             rect.right < 0 || rect.left > this.renderer.domElement.clientWidth) {
             return; // it's off screen
         }
+        
+        if (scene.userData.parameters.rotationActive && scene.userData.parameters.rotationSpeed != 0 && scene.children[2]) {
+            scene.userData.elapsedTime+= this.delta;
+            scene.children[2].quaternion.setFromAxisAngle(scene.userData.parameters.rotationAxis, scene.userData.elapsedTime * scene.userData.parameters.rotationSpeed);
+        }
+
 
         // set the viewport
         const bottom = this.renderer.domElement.clientHeight - rect.bottom;
@@ -288,10 +287,10 @@ function processAttributes(element, defaultParameters) {
         facesActive: readAttribute(element, "data-faces-active", defaultParameters.facesActive) == "true",
         rotationAxis: parseVec3(readAttribute(element, "data-rotation-axis", defaultParameters.rotationAxis)),
         rotationSpeed: parseFloat(readAttribute(element, "data-rotation-speed", defaultParameters.rotationSpeed)),
+        rotationActive: readAttribute(element, "data-rotation-active", "true") == "true",
         vertexColor: parseColor(readAttribute(element, "data-vertex-color", defaultParameters.vertexColor)),
         edgeColor: parseColor(readAttribute(element, "data-edge-color", defaultParameters.edgeColor)),
         faceColor: parseColor(readAttribute(element, "data-face-color", defaultParameters.faceColor)),
-        displayPolyInfo: readAttribute(element, "data-display-info", defaultParameters.displayPolyInfo) == "true",
     };
 
     parameters["facesColors"] = { ...defaultParameters["facesColors"] };
@@ -317,10 +316,10 @@ function processRootAttributes(rootStyle) {
         facesActive: "true",
         rotationAxis: "0,1,0",
         rotationSpeed: 0.0,
+        rotationActive: "true",
         vertexColor: undefined,
         edgeColor: undefined,
         faceColor: undefined,
-        displayPolyInfo: "true",
     }
     const parameters = {
         vertexRadius: readRootAttribute(rootStyle, "--data-vertex-radius", defaultParameters.vertexRadius),
@@ -332,6 +331,7 @@ function processRootAttributes(rootStyle) {
         facesActive: readRootAttribute(rootStyle, "--data-faces-active", defaultParameters.facesActive),
         rotationAxis: readRootAttribute(rootStyle, "--data-rotation-axis", defaultParameters.rotationAxis),
         rotationSpeed: readRootAttribute(rootStyle, "--data-rotation-speed", defaultParameters.rotationSpeed),
+        rotationActive: readRootAttribute(rootStyle, "--data-rotation-active", defaultParameters.rotationActive),
         vertexColor: readRootAttribute(rootStyle, "--data-vertex-color", defaultParameters.vertexColor),
         edgeColor: readRootAttribute(rootStyle, "--data-edge-color", defaultParameters.edgeColor),
         faceColor: readRootAttribute(rootStyle, "--data-face-color", defaultParameters.faceColor),

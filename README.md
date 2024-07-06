@@ -69,6 +69,7 @@ You may also set the parameters globally using css styling with a double dash in
 * The mouse wheel zooms in or out.
 * Press R to reset the model position or triple click.
 * Press F to trigger fullscreen or double click.
+* Press S to pause/resume the rotation
 
 ### Known issues
 * After a double or triple click, the mouse seems to be in a selection mode and grabs onto the model. Click once anywhere to release it. If you have a solution for that, please either make a PR with the correction or create an issue with a working solution.
