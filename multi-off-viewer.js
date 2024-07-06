@@ -17,8 +17,6 @@ class PolyViewer {
         this.clicks = 0;
         this.timeout = 350;
         this.indFullScreen = -1;
-        this.backgroundColor=null;
-        this.backgroundFullScreenColor=null;
     }
 
     init() {
@@ -29,13 +27,13 @@ class PolyViewer {
         // document.body.appendChild(this.canvas);
         document.body.insertBefore(this.canvas, document.body.firstChild);
 
-        const rootStyle = getComputedStyle(document.querySelector(':root'));
-        this.backgroundColor = rootStyle.getPropertyValue('--data-background-color');
-        this.backgroundFullScreenColor = rootStyle.getPropertyValue('--data-fullscreen-background-color');
+        const rootStyle = getComputedStyle(document.querySelector('.threeJS-viewer-canvas'));
+        console.log(rootStyle)
+        const defaultParameters = processRootAttributes(rootStyle);
 
         const viewerDivs = document.getElementsByClassName('threeJS-viewer');
         for (let viewerDiv of viewerDivs) {
-            this.addScene(viewerDiv);
+            this.addScene(viewerDiv, defaultParameters);
         }
 
         this.renderer = new THREE.WebGLRenderer({ canvas: this.canvas, antialias: true });
@@ -138,14 +136,12 @@ class PolyViewer {
         window.addEventListener('resize', this.updateSize);
     }
 
-    addScene(element) {
+    addScene(element, defaultParameters) {
         // SCENE
         const scene = new THREE.Scene();
         scene.userData.elapsedTime = 0;
         scene.userData.element = element;
-        scene.userData.parameters = processAttributes(scene.userData.element);
-        scene.userData.parameters.backgroundColor = parseColor(readAttributeOrDefault(element, "data-background-color", this.backgroundColor));
-        scene.userData.parameters.backgroundFullScreenColor = parseColor(readAttributeOrDefault(element, "data-fullscreen-background-color", this.backgroundFullScreenColor));
+        scene.userData.parameters = processAttributes(scene.userData.element, defaultParameters);
         if (scene.userData.parameters.backgroundColor){
             scene.background = new THREE.Color(...scene.userData.parameters.backgroundColor.slice(0,3));
         }
@@ -250,11 +246,14 @@ class PolyViewer {
 }
 
 
-function readAttributeOrDefault(element, key, defaultValue) {
+function readAttribute(element, key, defaultValue) {
     let val = element.getAttribute(key)
-    if (!val) {
-        val = defaultValue;
-    }
+    if (!val) { val = defaultValue; }
+    return val;
+}
+function readRootAttribute(element, key, defaultValue) {
+    let val = element.getPropertyValue(key)
+    if (!val) { val = defaultValue; }
     return val;
 }
 function clamp(num, min, max) {
@@ -277,24 +276,75 @@ function parseColor(pString) {
     ];
     return res;
 }
-function processAttributes(element) {
+function processAttributes(element, defaultParameters) {
     const parameters = {
-        url: readAttributeOrDefault(element, "src", "/off/U1.off"),
-        vertexRadius: clamp(parseFloat(readAttributeOrDefault(element, "data-vertex-radius", "0.03")), 0.0, 1.0),
-        edgeRadius: clamp(parseFloat(readAttributeOrDefault(element, "data-edge-radius", "0.02")), 0.0, 1.0),
-        backgroundColor: parseColor(readAttributeOrDefault(element, "data-background-color", "#cccccc")),
-        verticesActive: readAttributeOrDefault(element, "data-vertices-active", "true") == "true",
-        edgesActive: readAttributeOrDefault(element, "data-edges-active", "true") == "true",
-        facesActive: readAttributeOrDefault(element, "data-faces-active", "true") == "true",
-        rotationAxis: parseVec3(readAttributeOrDefault(element, "data-rotation-axis", "0,1,0")),
-        rotationSpeed: parseFloat(readAttributeOrDefault(element, "data-rotation-speed", 0.0)),
-        rotationActive: readAttributeOrDefault(element, "data-rotation-active", "true") == "true",
-        vertexColor: parseColor(element.getAttribute("data-vertex-color")),
-        edgeColor: parseColor(element.getAttribute("data-edge-color")),
-        faceColor: parseColor(element.getAttribute("data-face-color")),
+        url: readAttribute(element, "src", "/off/U1.off"),
+        vertexRadius: clamp(parseFloat(readAttribute(element, "data-vertex-radius", defaultParameters.vertexRadius)), 0.0, 1.0),
+        edgeRadius: clamp(parseFloat(readAttribute(element, "data-edge-radius", defaultParameters.edgeRadius)), 0.0, 1.0),
+        backgroundColor: parseColor(readAttribute(element, "data-background-color", defaultParameters.backgroundColor)),
+        backgroundFullScreenColor: parseColor(readAttribute(element, "data-fullscreen-background-color", defaultParameters.backgroundFullScreenColor)),
+        verticesActive: readAttribute(element, "data-vertices-active", defaultParameters.verticesActive) == "true",
+        edgesActive: readAttribute(element, "data-edges-active", defaultParameters.edgesActive) == "true",
+        facesActive: readAttribute(element, "data-faces-active", defaultParameters.facesActive) == "true",
+        rotationAxis: parseVec3(readAttribute(element, "data-rotation-axis", defaultParameters.rotationAxis)),
+        rotationSpeed: parseFloat(readAttribute(element, "data-rotation-speed", defaultParameters.rotationSpeed)),
+        vertexColor: parseColor(readAttribute(element, "data-vertex-color", defaultParameters.vertexColor)),
+        edgeColor: parseColor(readAttribute(element, "data-edge-color", defaultParameters.edgeColor)),
+        faceColor: parseColor(readAttribute(element, "data-face-color", defaultParameters.faceColor)),
+        displayPolyInfo: readAttribute(element, "data-display-info", defaultParameters.displayPolyInfo) == "true",
     };
 
+    parameters["facesColors"] = { ...defaultParameters["facesColors"] };
+    for (let i = 0, atts = element.attributes, n = atts.length; i < n; i++) {
+        if (atts[i].nodeName.match("data-face[0-9]+-color")) {
+            const key = parseInt(atts[i].nodeName.slice(9, -6), 10)
+            parameters["facesColors"][key] = parseColor(atts[i].nodeValue);
+        }
+    }
+
     parameters.rotationAxis.normalize();
+    return parameters;
+}
+
+function processRootAttributes(rootStyle) {
+    const defaultParameters = {
+        vertexRadius: "0.03",
+        edgeRadius: "0.02",
+        backgroundColor: "#cccccc",
+        backgroundFullScreenColor: "#cccccc",
+        verticesActive: "true",
+        edgesActive: "true",
+        facesActive: "true",
+        rotationAxis: "0,1,0",
+        rotationSpeed: 0.0,
+        vertexColor: undefined,
+        edgeColor: undefined,
+        faceColor: undefined,
+        displayPolyInfo: "true",
+    }
+    const parameters = {
+        vertexRadius: readRootAttribute(rootStyle, "--data-vertex-radius", defaultParameters.vertexRadius),
+        edgeRadius: readRootAttribute(rootStyle, "--data-edge-radius", defaultParameters.edgeRadius),
+        backgroundColor: readRootAttribute(rootStyle, '--data-background-color', defaultParameters.backgroundColor),
+        backgroundFullScreenColor: readRootAttribute(rootStyle, '--data-fullscreen-background-color', defaultParameters.backgroundFullScreenColor),
+        verticesActive: readRootAttribute(rootStyle, "--data-vertices-active", defaultParameters.verticesActive),
+        edgesActive: readRootAttribute(rootStyle, "--data-edges-active", defaultParameters.edgesActive),
+        facesActive: readRootAttribute(rootStyle, "--data-faces-active", defaultParameters.facesActive),
+        rotationAxis: readRootAttribute(rootStyle, "--data-rotation-axis", defaultParameters.rotationAxis),
+        rotationSpeed: readRootAttribute(rootStyle, "--data-rotation-speed", defaultParameters.rotationSpeed),
+        vertexColor: readRootAttribute(rootStyle, "--data-vertex-color", defaultParameters.vertexColor),
+        edgeColor: readRootAttribute(rootStyle, "--data-edge-color", defaultParameters.edgeColor),
+        faceColor: readRootAttribute(rootStyle, "--data-face-color", defaultParameters.faceColor),
+        displayPolyInfo: readRootAttribute(rootStyle, "--data-display-info", defaultParameters.displayPolyInfo),
+    };
+    parameters["facesColors"] = {};
+    for (let i = 0; i < rootStyle.length; i++) {
+        const propertyName = rootStyle[i];
+        if (propertyName.match("--data-face[0-9]+-color")) {
+            const key = parseInt(propertyName.slice(11, -6), 10);
+            parameters["facesColors"][key] = parseColor(readRootAttribute(rootStyle, propertyName, undefined));
+        }
+    }
     return parameters;
 }
 
